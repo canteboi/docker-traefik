@@ -192,14 +192,12 @@ services:
       - $DOCKERDIR/logs/cloudserver/traefik:/logs # for fail2ban or crowdsec
     environment:
       - TZ=$TZ
-      - CF_API_EMAIL_FILE=/run/secrets/cf_email
-      - CF_API_KEY_FILE=/run/secrets/cf_api_key
-      - HTPASSWD_FILE=/run/secrets/htpasswd # HTPASSWD_FILE can be whatever as it is not used/called anywhere.
+      - CF_ZONE_API_TOKEN=/run/secrets/cf_zone_api_token
+      - CF_DNS_API_TOKEN=/run/secrets/cf_dns_api_token
       - DOMAINNAME_CLOUD_SERVER # Passing the domain name to traefik container to be able to use the variable in rules.
     secrets:
-      - cf_email
-      - cf_api_key
-      - htpasswd
+      - cf_zone_api_token
+      - cf_dns_api_token
     labels:
       #- "autoheal=true"
       - "traefik.enable=true"
