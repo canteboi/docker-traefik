@@ -107,15 +107,18 @@ services:
 
   # Traefik 2 - Reverse Proxy
   # Touch (create empty files) traefik.log and acme/acme.json. Set acme.json permissions to 600.
+  # mkdir $DOCKERDIR/appdata/traefik2/acme
   # touch $DOCKERDIR/appdata/traefik2/acme/acme.json
   # chmod 600 $DOCKERDIR/appdata/traefik2/acme/acme.json
+  # mkdir $DOCKERDIR/logs
+  # mkdir $DOCKERDIR/logs/cloudserver
   # touch $DOCKERDIR/logs/cloudserver/traefik.log
   # touch $DOCKERDIR/logs/cloudserver/access.log
 
   traefik:
     <<: *common-keys-core # See EXTENSION FIELDS at the top
     container_name: traefik
-    image: traefik:v2.9
+    image: traefik:v2.9.1
     command: # CLI arguments
       - --global.checkNewVersion=true
       - --global.sendAnonymousUsage=true
