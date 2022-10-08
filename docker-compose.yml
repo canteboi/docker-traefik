@@ -112,8 +112,8 @@ services:
   # chmod 600 $DOCKERDIR/appdata/traefik2/acme/acme.json
   # mkdir $DOCKERDIR/logs
   # mkdir $DOCKERDIR/logs/cloudserver
-  # touch $DOCKERDIR/logs/cloudserver/traefik.log
-  # touch $DOCKERDIR/logs/cloudserver/access.log
+  # touch $DOCKERDIR/logs/cloudserver/traefik/traefik.log
+  # touch $DOCKERDIR/logs/cloudserver/traefik/access.log
 
   traefik:
     <<: *common-keys-core # See EXTENSION FIELDS at the top
@@ -135,7 +135,7 @@ services:
       # - --serversTransport.insecureSkipVerify=true
       - --log=true
       - --log.filePath=/logs/traefik.log
-      - --log.level=INFO # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
+      - --log.level=DEBUG # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
       - --accessLog=true
       - --accessLog.filePath=/logs/access.log
       - --accessLog.bufferingSize=100 # Configuring a buffer of 100 lines
@@ -230,28 +230,28 @@ services:
       - "traefik.http.routers.traefik-rtr.middlewares=chain-oauth@file" # For Google OAuth
       #- "traefik.http.routers.traefik-rtr.middlewares=chain-authelia@file" # For Authelia Authentication
 
-  # Portainer - WebUI for Containers
-  portainer:
-    <<: *common-keys-core # See EXTENSION FIELDS at the top
-    container_name: portainer
-    image: portainer/portainer-ce:latest
-    # command: -H unix:///var/run/docker.sock # # Use Docker Socket Proxy instead for improved security
-    command: -H tcp://socket-proxy:2375
-    networks:
-      - t2_proxy
-      - socket_proxy
-    volumes:
-      # - /var/run/docker.sock:/var/run/docker.sock:ro # # Use Docker Socket Proxy instead for improved security
-      - $DOCKERDIR/appdata/portainer/data:/data # Change to local directory if you want to save/transfer config locally
-    environment:
-      - TZ=$TZ
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.portainer-rtr.entrypoints=https"
-      - "traefik.http.routers.portainer-rtr.rule=Host(`portainer.$DOMAINNAME_CLOUD_SERVER`)"
-      ## Middlewares
-      - "traefik.http.routers.portainer-rtr.middlewares=chain-oauth@file"
-      ## HTTP Services
-      - "traefik.http.routers.portainer-rtr.service=portainer-svc"
-      - "traefik.http.services.portainer-svc.loadbalancer.server.port=9000"
+  # # Portainer - WebUI for Containers
+  # portainer:
+  #   <<: *common-keys-core # See EXTENSION FIELDS at the top
+  #   container_name: portainer
+  #   image: portainer/portainer-ce:latest
+  #   # command: -H unix:///var/run/docker.sock # # Use Docker Socket Proxy instead for improved security
+  #   command: -H tcp://socket-proxy:2375
+  #   networks:
+  #     - t2_proxy
+  #     - socket_proxy
+  #   volumes:
+  #     # - /var/run/docker.sock:/var/run/docker.sock:ro # # Use Docker Socket Proxy instead for improved security
+  #     - $DOCKERDIR/appdata/portainer/data:/data # Change to local directory if you want to save/transfer config locally
+  #   environment:
+  #     - TZ=$TZ
+  #   labels:
+  #     - "traefik.enable=true"
+  #     ## HTTP Routers
+  #     - "traefik.http.routers.portainer-rtr.entrypoints=https"
+  #     - "traefik.http.routers.portainer-rtr.rule=Host(`portainer.$DOMAINNAME_CLOUD_SERVER`)"
+  #     ## Middlewares
+  #     - "traefik.http.routers.portainer-rtr.middlewares=chain-oauth@file"
+  #     ## HTTP Services
+  #     - "traefik.http.routers.portainer-rtr.service=portainer-svc"
+  #     - "traefik.http.services.portainer-svc.loadbalancer.server.port=9000"
