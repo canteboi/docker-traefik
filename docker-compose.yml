@@ -20,6 +20,10 @@ networks:
 secrets:
   htpasswd:
     file: $DOCKERDIR/secrets/htpasswd
+  cf_dns_api_token:
+    file: $DOCKERDIR/secrets/cf_dns_api_token
+  cf_zone_api_token:
+    file: $DOCKERDIR/secrets/cf_zone_api_token
   cf_email:
     file: $DOCKERDIR/secrets/cf_email
   cf_api_key:
