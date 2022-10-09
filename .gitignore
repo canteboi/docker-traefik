@@ -32,6 +32,7 @@ shared/config/*
 
 !secrets_example
 !secrets_example/*
+secrets_example/*
 
 !scripts
 scripts/*
