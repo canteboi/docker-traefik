@@ -135,11 +135,11 @@ services:
       - --api=true
       # - --api.insecure=true
       - --api.dashboard=true
-      #- --ping=true
+      - --ping=true
       # - --serversTransport.insecureSkipVerify=true
       - --log=true
       - --log.filePath=/logs/traefik.log
-      - --log.level=DEBUG # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
+      - --log.level=INFO # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
       - --accessLog=true
       - --accessLog.filePath=/logs/access.log
       - --accessLog.bufferingSize=100 # Configuring a buffer of 100 lines
@@ -295,7 +295,7 @@ services:
       COLLECTIONS: "crowdsecurity/traefik crowdsecurity/http-cve crowdsecurity/whitelist-good-actors crowdsecurity/iptables crowdsecurity/linux crowdsecurity/nginx crowdsecurity/sshd"
       GID: "${GID-1000}"
       CUSTOM_HOSTNAME: "cDoc"
-      DISABLE_LOCAL_API: "true" # Only after successfully registering and validating remote agent below.
+      # DISABLE_LOCAL_API: "true" # Only after successfully registering and validating remote agent below.
       # For the following, check local_api_credentials.yaml after cscli lapi register (secondary machine) and cscli machine validate (on primary machine)
       AGENT_USERNAME: $CROWDSEC_AGENT_USERNAME
       AGENT_PASSWORD: $CROWDSEC_AGENT_PASSWORD
@@ -329,27 +329,28 @@ services:
       - $DOCKERDIR/appdata/cloudflare-bouncer/cfg.yaml:/etc/crowdsec/bouncers/crowdsec-cloudflare-bouncer.yaml
       - $DOCKERDIR/appdata/cloudflare-bouncer/cf-bouncer:/cf-bouncer
   # # Portainer - WebUI for Containers
-  # portainer:
-  #   <<: *common-keys-core # See EXTENSION FIELDS at the top
-  #   container_name: portainer
-  #   image: portainer/portainer-ce:latest
-  #   # command: -H unix:///var/run/docker.sock # # Use Docker Socket Proxy instead for improved security
-  #   command: -H tcp://socket-proxy:2375
-  #   networks:
-  #     - t2_proxy
-  #     - socket_proxy
-  #   volumes:
-  #     # - /var/run/docker.sock:/var/run/docker.sock:ro # # Use Docker Socket Proxy instead for improved security
-  #     - $DOCKERDIR/appdata/portainer/data:/data # Change to local directory if you want to save/transfer config locally
-  #   environment:
-  #     - TZ=$TZ
-  #   labels:
-  #     - "traefik.enable=true"
-  #     ## HTTP Routers
-  #     - "traefik.http.routers.portainer-rtr.entrypoints=https"
-  #     - "traefik.http.routers.portainer-rtr.rule=Host(`portainer.$DOMAINNAME_CLOUD_SERVER`)"
-  #     ## Middlewares
-  #     - "traefik.http.routers.portainer-rtr.middlewares=chain-oauth@file"
-  #     ## HTTP Services
-  #     - "traefik.http.routers.portainer-rtr.service=portainer-svc"
-  #     - "traefik.http.services.portainer-svc.loadbalancer.server.port=9000"
+  portainer:
+    <<: *common-keys-core # See EXTENSION FIELDS at the top
+    container_name: portainer
+    image: portainer/portainer-ce:latest
+    # command: -H unix:///var/run/docker.sock # # Use Docker Socket Proxy instead for improved security
+    command: -H tcp://socket-proxy:2375
+    networks:
+      - t2_proxy
+      - socket_proxy
+    volumes:
+      # - /var/run/docker.sock:/var/run/docker.sock:ro # # Use Docker Socket Proxy instead for improved security
+      - $DOCKERDIR/appdata/portainer/data:/data # Change to local directory if you want to save/transfer config locally
+    environment:
+      - TZ=$TZ
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.portainer-rtr.entrypoints=https"
+      - "traefik.http.routers.portainer-rtr.rule=Host(`portainer.$DOMAINNAME_CLOUD_SERVER`)"
+      ## Middlewares
+      - "traefik.http.routers.portainer-rtr.middlewares=chain-basic-auth@file"
+      # - "traefik.http.routers.portainer-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.portainer-rtr.service=portainer-svc"
+      - "traefik.http.services.portainer-svc.loadbalancer.server.port=9000"
