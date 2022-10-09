@@ -303,7 +303,6 @@ services:
     volumes:
       - $DOCKERDIR/logs/cloudserver:/logs:ro
       - /var/log:/var/log:ro
-      - /media/cbox/log:/cbox/log:ro
       - $DOCKERDIR/appdata/crowdsec/data:/var/lib/crowdsec/data
       - $DOCKERDIR/appdata/crowdsec/config:/etc/crowdsec
 
@@ -316,6 +315,19 @@ services:
       GIN_MODE: release # default is debug (more logs)
       CROWDSEC_BOUNCER_API_KEY: $CROWDSEC_BOUNCER_TRAEFIK_API_KEY
       CROWDSEC_AGENT_HOST: $CROWDSEC_LAPI_HOST:$CROWDSEC_LAPI_PORT # CrowdSec host and port
+
+  # CrowdSec Bouncer - Cloudflare
+  # sudo docker exec crowdsec cscli bouncer add cloudflare-bouncer
+  # Set max ip number right the first time (max 10000). Recreating container deletes all ips and readds them causing cloudflare 429 rate limiting.
+  cloudflare-bouncer:
+    <<: *common-keys-core # See EXTENSION FIELDS at the top
+    image: crowdsecurity/cloudflare-bouncer
+    container_name: cloudflare-bouncer
+    #ports:
+    #  - "$CLOUDFLARE_BOUNCER_PORT:2112"
+    volumes:
+      - $DOCKERDIR/appdata/cloudflare-bouncer/cfg.yaml:/etc/crowdsec/bouncers/crowdsec-cloudflare-bouncer.yaml
+      - $DOCKERDIR/appdata/cloudflare-bouncer/cf-bouncer:/cf-bouncer
   # # Portainer - WebUI for Containers
   # portainer:
   #   <<: *common-keys-core # See EXTENSION FIELDS at the top
