@@ -201,10 +201,12 @@ services:
       - TZ=$TZ
       - CF_ZONE_API_TOKEN_FILE=/run/secrets/cf_zone_api_token
       - CF_DNS_API_TOKEN_FILE=/run/secrets/cf_dns_api_token
+      - HTPASSWD_FILE=/run/secrets/htpasswd # HTPASSWD_FILE can be whatever as it is not used/called anywhere.
       - DOMAINNAME_CLOUD_SERVER # Passing the domain name to traefik container to be able to use the variable in rules.
     secrets:
       - cf_zone_api_token
       - cf_dns_api_token
+      - htpasswd
     labels:
       #- "autoheal=true"
       - "traefik.enable=true"
@@ -225,13 +227,14 @@ services:
       ## Services - API
       - "traefik.http.routers.traefik-rtr.service=api@internal"
       ## Healthcheck/ping
-      #- "traefik.http.routers.ping.rule=Host(`traefik.$DOMAINNAME_CLOUD_SERVER`) && Path(`/ping`)"
-      #- "traefik.http.routers.ping.tls=true"
-      #- "traefik.http.routers.ping.service=ping@internal"
+      - "traefik.http.routers.ping.rule=Host(`traefik.$DOMAINNAME_CLOUD_SERVER`) && Path(`/ping`)"
+      - "traefik.http.routers.ping.tls=true"
+      - "traefik.http.routers.ping.service=ping@internal"
+
       ## Middlewares
       #- "traefik.http.routers.traefik-rtr.middlewares=chain-no-auth@file" # For No Authentication
-      #- "traefik.http.routers.traefik-rtr.middlewares=chain-basic-auth@file" # For Basic HTTP Authentication
-      - "traefik.http.routers.traefik-rtr.middlewares=chain-oauth@file" # For Google OAuth
+      - "traefik.http.routers.traefik-rtr.middlewares=chain-basic-auth@file" # For Basic HTTP Authentication
+      # - "traefik.http.routers.traefik-rtr.middlewares=chain-oauth@file" # For Google OAuth
       #- "traefik.http.routers.traefik-rtr.middlewares=chain-authelia@file" # For Authelia Authentication
 
   socket-proxy:
@@ -281,7 +284,38 @@ services:
       - TASKS=1 # Portainer
       - VOLUMES=1 # Portainer
 
+  # CrowdSec - Open-source & collaborative security IPS
+  crowdsec:
+    <<: *common-keys-core # See EXTENSION FIELDS at the top
+    image: crowdsecurity/crowdsec
+    container_name: crowdsec
+    ports:
+      - "$CROWDSEC_API_PORT:8080"
+    environment:
+      COLLECTIONS: "crowdsecurity/traefik crowdsecurity/http-cve crowdsecurity/whitelist-good-actors crowdsecurity/iptables crowdsecurity/linux crowdsecurity/nginx crowdsecurity/sshd"
+      GID: "${GID-1000}"
+      CUSTOM_HOSTNAME: "cDoc"
+      DISABLE_LOCAL_API: "true" # Only after successfully registering and validating remote agent below.
+      # For the following, check local_api_credentials.yaml after cscli lapi register (secondary machine) and cscli machine validate (on primary machine)
+      AGENT_USERNAME: $CROWDSEC_AGENT_USERNAME
+      AGENT_PASSWORD: $CROWDSEC_AGENT_PASSWORD
+      LOCAL_API_URL: $CROWDSEC_LOCAL_API_URL
+    volumes:
+      - $DOCKERDIR/logs/cloudserver:/logs:ro
+      - /var/log:/var/log:ro
+      - /media/cbox/log:/cbox/log:ro
+      - $DOCKERDIR/appdata/crowdsec/data:/var/lib/crowdsec/data
+      - $DOCKERDIR/appdata/crowdsec/config:/etc/crowdsec
 
+  # CrowdSec Bouncer - Traefik
+  traefik-bouncer:
+    <<: *common-keys-core # See EXTENSION FIELDS at the top
+    image: fbonalair/traefik-crowdsec-bouncer
+    container_name: traefik-bouncer
+    environment:
+      GIN_MODE: release # default is debug (more logs)
+      CROWDSEC_BOUNCER_API_KEY: $CROWDSEC_BOUNCER_TRAEFIK_API_KEY
+      CROWDSEC_AGENT_HOST: $CROWDSEC_LAPI_HOST:$CROWDSEC_LAPI_PORT # CrowdSec host and port
   # # Portainer - WebUI for Containers
   # portainer:
   #   <<: *common-keys-core # See EXTENSION FIELDS at the top
