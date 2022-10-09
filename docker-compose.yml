@@ -240,7 +240,7 @@ services:
   socket-proxy:
     <<: *common-keys-core # See EXTENSION FIELDS at the top
     container_name: socket-proxy
-    image: tecnativa/docker-socket-proxy
+    image: tecnativa/docker-socket-proxy:0.1.1
     networks:
       socket_proxy:
         ipv4_address: 192.168.91.254 # You can specify a static IP
@@ -287,7 +287,7 @@ services:
   # CrowdSec - Open-source & collaborative security IPS
   crowdsec:
     <<: *common-keys-core # See EXTENSION FIELDS at the top
-    image: crowdsecurity/crowdsec
+    image: crowdsecurity/crowdsec:v1.4.1
     container_name: crowdsec
     ports:
       - "$CROWDSEC_API_PORT:8080"
@@ -310,7 +310,7 @@ services:
   # CrowdSec Bouncer - Traefik
   traefik-bouncer:
     <<: *common-keys-core # See EXTENSION FIELDS at the top
-    image: fbonalair/traefik-crowdsec-bouncer
+    image: fbonalair/traefik-crowdsec-bouncer:0.4
     container_name: traefik-bouncer
     environment:
       GIN_MODE: release # default is debug (more logs)
