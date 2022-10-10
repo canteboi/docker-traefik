@@ -9,6 +9,16 @@ networks:
   socket_proxy:
     name: socket_proxy
     external: true
+  dockervlan:
+    name: dockervlan
+    driver: macvlan
+    driver_opts:
+      parent: eth1 # using ifconfig
+    ipam:
+      config:
+        - subnet: "192.168.1.0/24"
+          ip_range: "192.168.1.25/32"
+          gateway: "192.168.1.1"
 
 # Keys common to some of the services in basic-services.txt
 x-common-keys-core: &common-keys-core
@@ -139,22 +149,30 @@ services:
       - "traefik.http.services.qdirstat-svc.loadbalancer.server.port=5800"
 
   # AdGuard Home - DNS AdBlocking
-  # adguardhome:
-  #   <<: *common-keys-core # See EXTENSION FIELDS at the top
-  #   container_name: adguardhome
-  #   image: adguard/adguardhome
-  #   ports:
-  #     - "53:53/tcp"
-  #     - "53:53/udp"
-  #     # - "3000:3000/tcp"
-  #   volumes:
-  #     - $DOCKERDIR/appdata/adguard/conf:/opt/adguardhome/conf
-  #     - $DOCKERDIR/appdata/adguard/work:/opt/adguardhome/work
-  #   labels:
-  #     - "traefik.enable=true"
-  #     ## HTTP Routers
-  #     - "traefik.http.routers.adguard-rtr.entrypoints=https"
-  #     - "traefik.http.routers.adguard-rtr.rule=Host(`adguard.$DOMAINNAME_CLOUD_SERVER`)"
-  #     ## HTTP Services
-  #     - "traefik.http.routers.adguard-rtr.service=adguard-svc"
-  #     - "traefik.http.services.adguard-svc.loadbalancer.server.port=80"
+  adguardhome:
+    <<: *common-keys-core # See EXTENSION FIELDS at the top
+    container_name: adguardhome
+    image: adguard/adguardhome
+    networks:
+      dockervlan:
+        ipv4_address: 192.168.1.25 # IP address inside defined range
+    ports:
+      - 53/udp
+      - 67/udp
+      - 68/tcp
+      - 68/udp
+      - 80/tcp
+      - 443/tcp
+      - 853/tcp
+      - 3000/tcp
+    volumes:
+      - $DOCKERDIR/appdata/adguard/conf:/opt/adguardhome/conf
+      - $DOCKERDIR/appdata/adguard/work:/opt/adguardhome/work
+    # labels:
+    #   - "traefik.enable=true"
+    #   ## HTTP Routers
+    #   - "traefik.http.routers.adguard-rtr.entrypoints=https"
+    #   - "traefik.http.routers.adguard-rtr.rule=Host(`adguard.$DOMAINNAME_CLOUD_SERVER`)"
+    #   ## HTTP Services
+    #   - "traefik.http.routers.adguard-rtr.service=adguard-svc"
+    #   - "traefik.http.services.adguard-svc.loadbalancer.server.port=80"
