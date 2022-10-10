@@ -359,12 +359,15 @@ services:
   cloudflare-bouncer:
     <<: *common-keys-core # See EXTENSION FIELDS at the top
     image: crowdsecurity/cloudflare-bouncer
+    depends_on:
+      - crowdsec
     container_name: cloudflare-bouncer
     #ports:
     #  - "$CLOUDFLARE_BOUNCER_PORT:2112"
     volumes:
       - $DOCKERDIR/appdata/cloudflare-bouncer/cfg.yaml:/etc/crowdsec/bouncers/crowdsec-cloudflare-bouncer.yaml
       - $DOCKERDIR/appdata/cloudflare-bouncer/cf-bouncer:/cf-bouncer
+
   # # Portainer - WebUI for Containers
   portainer:
     <<: *common-keys-core # See EXTENSION FIELDS at the top
@@ -392,3 +395,22 @@ services:
       ## HTTP Services
       - "traefik.http.routers.portainer-rtr.service=portainer-svc"
       - "traefik.http.services.portainer-svc.loadbalancer.server.port=9000"
+
+  dockergc:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: clockworksoul/docker-gc-cron:latest
+    container_name: docker-gc
+    networks:
+      - socket_proxy
+    volumes:
+      # - /var/run/docker.sock:/var/run/docker.sock # Use Docker Socket Proxy instead for improved security
+      - $DOCKERDIR/appdata/docker-gc/docker-gc-exclude:/etc/docker-gc-exclude
+    environment:
+      CRON: 12 0 0 * * ? # Everyday at midnight.
+      FORCE_IMAGE_REMOVAL: 1
+      FORCE_CONTAINER_REMOVAL: 0
+      GRACE_PERIOD_SECONDS: 604800
+      DRY_RUN: 0
+      CLEAN_UP_VOLUMES: 1
+      TZ: $TZ
+      DOCKER_HOST: tcp://socket-proxy:2375
