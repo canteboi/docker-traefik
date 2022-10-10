@@ -9,6 +9,16 @@ networks:
   socket_proxy:
     name: socket_proxy
     external: true
+  dockervlan:
+    name: dockervlan
+    driver: macvlan
+    driver_opts:
+      parent: eth0
+    ipam:
+      config:
+        - subnet: "192.168.1.0/24"
+          ip_range: "192.168.1.25/32"
+          gateway: "192.168.1.1"
 
 # Keys common to some of the services in basic-services.txt
 x-common-keys-core: &common-keys-core
