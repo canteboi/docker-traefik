@@ -372,7 +372,7 @@ services:
   portainer:
     <<: *common-keys-core # See EXTENSION FIELDS at the top
     container_name: portainer
-    image: portainer/portainer-ce:latest
+    image: portainer/portainer-ee:latest
     # command: -H unix:///var/run/docker.sock # # Use Docker Socket Proxy instead for improved security
     command: -H tcp://socket-proxy:2375
     networks:
