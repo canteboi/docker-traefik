@@ -11,7 +11,7 @@ networks:
     external: true
 
 # Keys common to some of the services in basic-services.txt
-x-common-keys-core: &common-keys-monitoring
+x-common-keys-core: &common-keys-core
   networks:
     - t2_proxy
   security_opt:
