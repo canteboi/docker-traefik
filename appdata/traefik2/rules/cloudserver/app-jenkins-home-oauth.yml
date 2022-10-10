@@ -1,0 +1,18 @@
+http:
+  routers:
+    jenkins-rtr:
+      rule: "Host(`jenkins.{{env "DOMAINNAME_CLOUD_SERVER"}}`)"
+      entryPoints:
+        - https
+      middlewares:
+        - chain-oauth
+      service: jenkins-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+  services:
+    jenkins-svc:
+      loadBalancer:
+        servers:
+          - url: "http://jenkins.local.lan:30080/"
+
