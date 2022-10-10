@@ -100,7 +100,7 @@ services:
       - 80/tcp
       - 443/tcp
       - 853/tcp
-      - 3000/tcp
+      - "3000:3000/tcp"
     volumes:
       - $DOCKERDIR/appdata/adguard/conf:/opt/adguardhome/conf
       - $DOCKERDIR/appdata/adguard/work:/opt/adguardhome/work
