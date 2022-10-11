@@ -20,11 +20,6 @@ networks:
           ip_range: "192.168.1.25/32"
           gateway: "192.168.1.1"
 
-########################### SECRETS
-secrets:
-  firefoxpassword:
-    file: $DOCKERDIR/secrets/firefoxpassword
-
 # Keys common to some of the services in basic-services.txt
 x-common-keys-core: &common-keys-core
   networks:
@@ -59,9 +54,9 @@ x-common-keys-media: &common-keys-media
 services:
   firefox:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
-    image: lscr.io/linuxserver/firefox:latest
+    image: jlesage/firefox:latest
     container_name: firefox
-    shm_size: "2gb"
+    shm-size: "2g"
     security_opt:
       - no-new-privileges:true
       - seccomp:unconfined # October 15, 2020 https://github.com/jlesage/docker-firefox/blob/master/README.md#allowing-the-membarrier-system-call
@@ -70,15 +65,14 @@ services:
       - $DOWNLOADSDIR:/config/Downloads
       - /dev/shm:/dev/shm
     environment:
-      - PUID=$PUID
-      - PGID=$PGID
-      - TZ=$TZ
-      #- UMASK=002
-      - KEEP_APP_RUNNING=1
-      - CLEAN_TMP_DIR=1
-      - DISPLAY_WIDTH=1600
-      - DISPLAY_HEIGHT=960
-      - FILE__PASSWORD=/run/secrets/firefoxpassword
+      USER_ID: $PUID
+      GROUP_ID: $PGID
+      TZ: $TZ
+      UMASK: 002
+      KEEP_APP_RUNNING: 1
+      CLEAN_TMP_DIR: 1
+      DISPLAY_WIDTH: 1600
+      DISPLAY_HEIGHT: 960
       # VNC_PASSWD: $FIREFOX_VNC_PASSWD # Since OAuth is enabled
     labels:
       - "traefik.enable=true"
@@ -89,7 +83,7 @@ services:
       - "traefik.http.routers.firefox-rtr.middlewares=chain-oauth@file"
       ## HTTP Services
       - "traefik.http.routers.firefox-rtr.service=firefox-svc"
-      - "traefik.http.services.firefox-svc.loadbalancer.server.port=3000"
+      - "traefik.http.services.firefox-svc.loadbalancer.server.port=5800"
 
   # Glances - System Information
   glances:
