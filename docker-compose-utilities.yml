@@ -56,7 +56,7 @@ services:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
     image: jlesage/firefox:latest
     container_name: firefox
-    shm-size: "2g"
+    shm_size: "2gb"
     security_opt:
       - no-new-privileges:true
       - seccomp:unconfined # October 15, 2020 https://github.com/jlesage/docker-firefox/blob/master/README.md#allowing-the-membarrier-system-call
