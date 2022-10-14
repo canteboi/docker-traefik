@@ -139,13 +139,11 @@ services:
       # - --serversTransport.insecureSkipVerify=true
       - --log=true
       - --log.filePath=/logs/traefik.log
-      - --log.format="json"
+      - --log.format=json
       - --log.level=INFO # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
       - --accessLog=true
       - --accessLog.format="json"
-      - --accessLog.fields.names="Username=drop Hostname=drop"
       - --accessLog.fields.headers.defaultMode="keep"
-      - --accessLog.fields.headers.names="User-Agent=redact Authorization=drop Content-Type=keep RequestProtocol=keep"
       - --accessLog.filePath=/logs/access.log
       - --accessLog.bufferingSize=500 # Configuring a buffer of 100 lines
       - --accessLog.filters.statusCodes=204-299,400-499,500-599
