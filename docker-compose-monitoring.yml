@@ -1,0 +1,148 @@
+version: "3.9"
+
+networks:
+  t2_proxy:
+    name: t2_proxy
+    external: true
+  default:
+    driver: bridge
+  socket_proxy:
+    name: socket_proxy
+    external: true
+
+# Keys common to some of the services in basic-services.txt
+x-common-keys-core: &common-keys-core
+  networks:
+    - t2_proxy
+  security_opt:
+    - no-new-privileges:true
+  restart: always
+  # profiles:
+  # - monitoring
+
+# Keys common to some of the dependent services/apps
+x-common-keys-apps: &common-keys-apps
+  networks:
+    - t2_proxy
+  security_opt:
+    - no-new-privileges:true
+  restart: unless-stopped
+  # profiles:
+  # - apps
+
+# Keys common to some of the services in media-services.txt
+x-common-keys-monitoring: &common-keys-monitoring
+  networks:
+    - t2_proxy
+    - socket_proxy
+  security_opt:
+    - no-new-privileges:true
+  restart: "no"
+  # profiles:
+  # - media
+
+########################### SERVICES
+services:
+  # Prometheus - Database for sensor data
+  prometheus:
+    <<: *common-keys-monitoring # See EXTENSION FIELDS at the top
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - $DOCKERDIR/appdata/prometheus/config:/etc/prometheus
+      - $DOCKERDIR/appdata/prometheus/data:/prometheus
+    user: $PUID:$PGID
+    environment:
+      - TZ=$TZ
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+      - "--web.enable-lifecycle"
+      - "--web.enable-admin-api"
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.prometheus-rtr.entrypoints=https"
+      - "traefik.http.routers.prometheus-rtr.rule=Host(`prom.$DOMAINNAME_CLOUD_SERVER`)"
+      ## Middlewares
+      - "traefik.http.routers.prometheus-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.prometheus-rtr.service=prometheus-svc"
+      - "traefik.http.services.prometheus-svc.loadbalancer.server.port=9090"
+
+  promtail:
+    <<: *common-keys-monitoring # See EXTENSION FIELDS at the top
+    depends_on:
+      - loki
+    image: grafana/promtail:latest
+    volumes:
+      - $DOCKERDIR/logs:/var/log
+      - $DOCKERDIR/appdata/promtail/config:/etc/promtail
+      - $DOCKERDIR/appdata/promtail/data:/promtail
+    command:
+      - "-config.file=/etc/promtail/promtail-config.yaml"
+    user: $PUID:$PGID
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.promtail-rtr.entrypoints=https"
+      - "traefik.http.routers.promtail-rtr.rule=Host(`promtail.$DOMAINNAME_CLOUD_SERVER`)"
+      ## Middlewares
+      - "traefik.http.routers.promtail-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.promtail-rtr.service=promtail-svc"
+      - "traefik.http.services.promtail-svc.loadbalancer.server.port=9080"
+
+  loki:
+    <<: *common-keys-monitoring # See EXTENSION FIELDS at the top
+    image: grafana/loki:latest
+    container_name: loki
+    depends_on:
+      - prometheus
+    environment:
+      - TZ=$TZ
+    volumes:
+      - $DOCKERDIR/appdata/loki/config:/etc/loki
+      - $DOCKERDIR/appdata/loki/data:/loki
+    command:
+      - "-config.file=/etc/loki/local-config.yaml"
+    user: $PUID:$PGID
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.loki-rtr.entrypoints=https"
+      - "traefik.http.routers.loki-rtr.rule=Host(`loki.$DOMAINNAME_CLOUD_SERVER`)"
+      ## Middlewares
+      - "traefik.http.routers.loki-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.loki-rtr.service=loki-svc"
+      - "traefik.http.services.loki-svc.loadbalancer.server.port=3100"
+
+  grafana:
+    <<: *common-keys-monitoring # See EXTENSION FIELDS at the top
+    depends_on:
+      - loki
+    image: grafana/grafana:latest
+    secrets:
+      - gf_security_admin_user
+      - gf_security_admin_password
+    user: $PUID:$PGID
+    environment:
+      TZ: $TZ
+      GF_INSTALL_PLUGINS: "grafana-clock-panel,grafana-simple-json-datasource,grafana-worldmap-panel,grafana-piechart-panel"
+      GF_SECURITY_ADMIN_USER_FILE: /run/secrets/gf_security_admin_user
+      GF_SECURITY_ADMIN_PASSWORD_FILE: /run/secrets/gf_security_admin_password
+    volumes:
+      - $DOCKERDIR/appdata/grafana:/var/lib/grafana
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.grafana-rtr.entrypoints=https"
+      - "traefik.http.routers.grafana-rtr.rule=Host(`grafana.$DOMAINNAME_CLOUD_SERVER`)"
+      ## Middlewares
+      - "traefik.http.routers.grafana-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.grafana-rtr.service=grafana-svc"
+      - "traefik.http.services.grafana-svc.loadbalancer.server.port=3000"
